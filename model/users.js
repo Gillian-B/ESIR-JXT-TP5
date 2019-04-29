@@ -1,11 +1,14 @@
 const uuidv1 = require('uuid/v1')
 const tcomb = require('tcomb')
+const bcrypt = require('bcrypt')
+const salt_round = 10
 
 const USER = tcomb.struct({
     id: tcomb.String,
     name: tcomb.String,
     login: tcomb.String,
-    age: tcomb.Number
+    age: tcomb.Number,
+    password: tcomb.String
 }, {strict: true})
 
 const users = [
@@ -13,7 +16,8 @@ const users = [
         id: '45745c60-7b1a-11e8-9c9c-2d42b21b1a3e',
         name: 'Pedro Ramirez',
         login: 'pedro',
-        age: 44
+        age: 44,
+        password: bcrypt.hashSync('azerty', salt_round)
     }, {
         id: '456897d-98a8-78d8-4565-2d42b21b1a3e',
         name: 'Jesse Jones',
@@ -44,9 +48,11 @@ const getAll = () => {
 }
 
 const add = (user) => {
+    password = bcrypt.hashSync(user.password, salt_round);
     const newUser = {
         ...user,
-        id: uuidv1()
+        id: uuidv1(),
+        password: password
     }
     if (validateUser(newUser)) {
         users.push(newUser)
@@ -62,6 +68,9 @@ const update = (id, newUserProperties) => {
     if (usersFound.length === 1) {
         const oldUser = usersFound[0]
 
+        if (newUserProperties.password) {
+            newUserProperties.password = bcrypt.hashSync(newUserProperties.password, salt_round)
+        }
         const newUser = {
             ...oldUser,
             ...newUserProperties
