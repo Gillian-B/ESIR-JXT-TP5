@@ -49,17 +49,18 @@ router.post('/', function (req, res, next) {
 
   /* istanbul ignore else */
   if (newUser) {
-    try {
-      const user = usersModel.add(newUser)
-      req
-        .res
-        .status(201)
-        .send(user)
-    } catch (exc) {
-      res
-        .status(400)
-        .json({message: exc.message})
-    }
+      usersModel
+        .add(newUser)
+        .then((user) => {
+          res
+            .status(201)
+            .send(user)
+        })
+        .catch ((exc) => {
+          res
+            .status(400)
+            .json({message: 'Error adding user'})
+        })
   } else {
     res
       .status(400)
@@ -74,24 +75,24 @@ router.patch('/:id', function (req, res, next) {
 
   /* istanbul ignore else */
   if (id && newUserProperties) {
-    try {
-      const updated = usersModel.update(id, newUserProperties)
-      res
-        .status(200)
-        .json(updated)
-
-    } catch (exc) {
-
-      if (exc.message === 'user.not.found') {
-        res
-          .status(404)
-          .json({message: `User not found with id ${id}`})
-      } else {
-        res
-          .status(400)
-          .json({message: 'Invalid user data'})
-      }
-    }
+      usersModel
+        .update(id, newUserProperties)
+        .then((updated) => {
+          res
+            .status(200)
+            .json(updated)
+        })
+        .catch ((message) => {
+          if (message === 'user.not.found') {
+            res
+              .status(404)
+              .json({message: `User not found with id ${id}`})
+          } else {
+            res
+              .status(400)
+              .json({message: 'Invalid user data'})
+          }
+        })
   } else {
     res
       .status(400)

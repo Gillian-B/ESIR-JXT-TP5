@@ -48,46 +48,76 @@ const getAll = () => {
 }
 
 const add = (user) => {
-    password = bcrypt.hashSync(user.password, salt_round);
-    const newUser = {
-        ...user,
-        id: uuidv1(),
-        password: password
-    }
-    if (validateUser(newUser)) {
-        users.push(newUser)
-    } else {
-        throw new Error('user.not.valid')
-    }
-    return newUser
+    return new Promise((resolve, reject) => {
+        bcrypt
+            .hash(user.password, salt_round)
+            .then((hashed) => {
+                const newUser = {
+                    ...user,
+                    id: uuidv1(),
+                    password: hashed
+                }
+                if (validateUser(newUser)) {
+                    users.push(newUser)
+                } else {
+                    throw new Error('user.not.valid')
+                }
+                resolve(newUser)
+            })
+            .catch((err) => {
+                reject()
+            })
+    })
 }
 
 const update = (id, newUserProperties) => {
-    const usersFound = users.filter((user) => user.id === id)
+    return new Promise((resolve, reject) => {
+        const usersFound = users.filter((user) => user.id === id)
 
-    if (usersFound.length === 1) {
-        const oldUser = usersFound[0]
+        if (usersFound.length === 1) {
+            const oldUser = usersFound[0]
 
-        if (newUserProperties.password) {
-            newUserProperties.password = bcrypt.hashSync(newUserProperties.password, salt_round)
-        }
-        const newUser = {
-            ...oldUser,
-            ...newUserProperties
-        }
-
-        // Control data to patch
-        if (validateUser(newUser)) {
-            // Object.assign permet d'éviter la suppression de l'ancien élément puis l'ajout
-            // du nouveau Il assigne à l'ancien objet toutes les propriétés du nouveau
-            Object.assign(oldUser, newUser)
-            return oldUser
+            if (newUserProperties.password) {
+                bcrypt
+                    .hash(newUserProperties.password, salt_round)
+                    .then((hash) => {
+                        newUserProperties.password = hash
+                        const newUser = {
+                            ...oldUser,
+                            ...newUserProperties
+                        }
+                        // Control data to patch
+                        if (validateUser(newUser)) {
+                            // Object.assign permet d'éviter la suppression de l'ancien élément puis l'ajout
+                            // du nouveau Il assigne à l'ancien objet toutes les propriétés du nouveau
+                            Object.assign(oldUser, newUser)
+                            resolve(oldUser)
+                        } else {
+                            reject('user.not.valid')
+                        }  
+                    })
+                    .catch((err) => {
+                        console.log("Error during hashing" + err)
+                    })
+            } else {
+                const newUser = {
+                    ...oldUser,
+                    ...newUserProperties
+                }
+                // Control data to patch
+                if (validateUser(newUser)) {
+                    // Object.assign permet d'éviter la suppression de l'ancien élément puis l'ajout
+                    // du nouveau Il assigne à l'ancien objet toutes les propriétés du nouveau
+                    Object.assign(oldUser, newUser);
+                    resolve(oldUser);
+                } else {
+                    reject("user.not.valid");
+                }
+            }
         } else {
-            throw new Error('user.not.valid')
+            reject('user.not.found')
         }
-    } else {
-        throw new Error('user.not.found')
-    }
+    })
 }
 
 const remove = (id) => {

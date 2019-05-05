@@ -14,7 +14,9 @@ describe('Auth tests', () => {
             .end((err, res) => {
                 res.should.have.status(200)
                 res.should.be.json
-                res.body.should.includes.all.keys(['access_token', 'expirity'])
+                res.body.should.have.property('message')
+                res.body.should.have.property('access_token')
+                res.body.message.should.be.eql('OK')
                 done()
             })
     })
@@ -26,7 +28,7 @@ describe('Auth tests', () => {
             .end((err, res) => {
                 res.should.have.status(401)
                 res.should.be.json
-                res.body.should.includes.all.keys(['code', 'type', 'message'])
+                res.body.should.have.property('message')
                 res.body.message.should.eql('Unauthorized')
                 done()
             })
@@ -38,18 +40,21 @@ describe('Auth tests', () => {
             .post('/v1/auth/login')
             .send({login: 'pedro', password: 'azerty'})
             .end((err, res) => {
+                const token = res.body.access_token
                 chai
                     .request(app)
-                    .get('v1/auth/verifyaccess')
-                    .set('ACCES_TOKEN', res.body.acces_token)
+                    .get('/v1/auth/verifyaccess')
+                    .set('Authorization', `bearer ${token}`)
                     .end((error, response) => {
                         response.should.have.status(200)
                         response.should.be.json
+                        response.body.should.have.property('message')
                         response.body.message.should.eql('OK')
+                        done()
                     })
             })
     })
-    it('should not have access', done => {
+    it('should not have access (wrong token)', done => {
         chai
             .request(app)
             .post('/v1/auth/login')
@@ -57,13 +62,32 @@ describe('Auth tests', () => {
             .end((err, res) => {
                 chai
                     .request(app)
-                    .get('v1/auth/verifyaccess')
-                    .set('ACCESS_TOKEN', 'azertyuiopqsdfghjklm')
-                    .end((err, res) => {
-                        res.should.have.status(401)
-                        res.should.be.json
-                        res.body.should.includes.all.keys(['code', 'type', 'message'])
-                        res.body.message.should.eql('Unauthorized')
+                    .get('/v1/auth/verifyaccess')
+                    .set('Authorization', `bearer azertyuiopqsdfghjklm`)
+                    .end((error, response) => {
+                        response.should.have.status(401)
+                        response.should.be.json
+                        response.body.should.have.property('message')
+                        response.body.message.should.eql('Unauthorized')
+                        done()
+                    })
+            })
+    })
+    it('should not have access (no token)', done => {
+        chai
+            .request(app)
+            .post('/v1/auth/login')
+            .send({login: 'pedro', password: 'azerty'})
+            .end((err, res) => {
+                chai
+                    .request(app)
+                    .get('/v1/auth/verifyaccess')
+                    .end((error, response) => {
+                        response.should.have.status(401)
+                        response.should.be.json
+                        response.body.should.have.property('message')
+                        response.body.message.should.eql('Unauthorized')
+                        done()
                     })
             })
     })
