@@ -1,12 +1,12 @@
 # ESIR-TP5 - Authentification
 
-##Lancement
+## Lancement
 ```console
 npm install
 npm start
 ```
 
-##Authentification
+## Authentification
 login: pedro, password: azerty pour obtenir le jwt
 
 ## Test
@@ -14,7 +14,7 @@ login: pedro, password: azerty pour obtenir le jwt
 npm test
 ```
 
-##Couverture de code
+## Couverture de code
 ```console
 npm run test-report
 ```
